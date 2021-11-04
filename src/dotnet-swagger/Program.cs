@@ -9,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
+//using System.Data.SqlClient;
 
 namespace Dotnet_Backend
 {
@@ -47,6 +49,8 @@ namespace Dotnet_Backend
 
             // dotnet add package Swashbuckle.AspNetCore
             services.AddSwaggerGen();
+
+            services.AddScoped<AdventureWorksDbContext>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -79,6 +83,36 @@ namespace Dotnet_Backend
                     context.Response.Redirect("/swagger");
                     return Task.CompletedTask;
                 });
+
+                endpoints.MapGet("/api/products", async context => {
+
+                    var dbContext = context.Request.HttpContext.RequestServices.GetRequiredService<AdventureWorksDbContext>();
+                    await context.Response.WriteAsJsonAsync<object[]>(
+                        dbContext.Products.Select(p =>
+                            new {
+                                Id = p.ProductId,
+                                Name = p.Name,
+                                ListPrice = p.ListPrice
+                            }).ToArray()
+                    );
+                });
+
+                //endpoints.MapGet("db/hello", async context =>
+                //{
+
+                //    var adventureWorks = "data source=localhost,1433;initial catalog=Adventureworks;persist security info=True;user id=sa;password=Password.123;MultipleActiveResultSets=True;";
+
+                //    using (var connection = new SqlConnection(adventureWorks))
+                //    {
+                //        SqlCommand command = new SqlCommand("EXEC [dbo].[sp_HelloWorld]", connection);
+                //        command.Connection.Open();
+                //        var helloDb = command.ExecuteScalar() as string;
+
+                //        context.Response.StatusCode = 200;
+
+                //        await context.Response.WriteAsync(helloDb);
+                //    }
+                //});
             });
 
         }
